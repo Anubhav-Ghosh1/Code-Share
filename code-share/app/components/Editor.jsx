@@ -11,16 +11,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 export const dynamic = "force-dynamic";
 function Editor() {
   const searchParams = useSearchParams();
+  const [loading, setLoading] = useState(false);
   const id = searchParams?.get("roomId");
   const name = searchParams?.get("name");
-
   const [users, setUsers] = useState([]);
   const socketRef = useRef(null);
   const editorRef = useRef(null);
   const hasJoined = useRef(false);
   const router = useRouter();
   const isSyncing = useRef(false);
-  console.log(users);
+  // console.log(users);
   useEffect(() => {
     if (!editorRef.current?.editorView) {
       const state = EditorState.create({
@@ -46,15 +46,19 @@ function Editor() {
   }, [id]);
 
   useEffect(() => {
+    const toadId = toast.loading("Connecting to server...");
+
     const init = async () => {
       socketRef.current = await initSocket();
 
-      socketRef.current.on("connect_error", (e) =>
-        console.error("Socket error:", e.message)
-      );
-      socketRef.current.on("connect", () =>
-        console.log("Socket connected", socketRef.current.id)
-      );
+      socketRef.current.on("connect_error", (e) => {
+        console.error("Socket error:", e.message);
+        toast.dismiss(toadId);
+      });
+      socketRef.current.on("connect", () => {
+        // console.log("Socket connected", socketRef.current.id);
+        toast.dismiss(toadId);
+      });
 
       if (id && name) {
         if (hasJoined.current) return;
@@ -106,7 +110,7 @@ function Editor() {
   };
 
   return (
-    <div className="w-full h-screen bg-gray-900 flex">
+    <div className="w-full h-screen text-white bg-gray-900 flex">
       <aside className="bg-gray-800 p-7 flex flex-col items-center relative">
         <div className="flex items-center gap-2 text-xl font-semibold pt-10 pb-4">
           <FaCode /> <p>| Code Share</p>
